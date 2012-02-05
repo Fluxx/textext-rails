@@ -17,7 +17,7 @@ Then in your `app/assets/javscipts/application.js` file, include the core JS fil
 //= require textext.plugin.tags
 ```
 
-Then, add the core CSS plus any plugins you need to your `app/assets/stylesheets/application.css.scsss` file:
+Then, add the core CSS plus any plugins you need to your `app/assets/stylesheets/application.css.scss` file:
 
 ```css
 *= require textext.core
