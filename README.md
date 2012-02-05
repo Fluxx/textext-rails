@@ -1,6 +1,6 @@
 # Textext Rails
 
-Brings the [jQuery TextExt plugin](http://textextjs.com/) into the Rails asset pipeline.
+Brings the [jQuery TextExt plugin](http://textextjs.com/) into the Rails asset pipeline.  The TextExt asset files are from the TextExt [1.2.0 release](https://github.com/alexgorbatchev/jquery-textext/tree/1.2.0).
 
 ## Installation
 
