@@ -1,8 +1,8 @@
 /**
  * jQuery TextExt Plugin
- * http://alexgorbatchev.com/textext
+ * http://textextjs.com
  *
- * @version 1.2.0
+ * @version 1.3.1
  * @copyright Copyright (C) 2011 Alex Gorbatchev. All rights reserved.
  * @license MIT License
  */
@@ -109,8 +109,10 @@
 	 */
 	p.init = function(core)
 	{
-		var self = this,
-			container
+		var self           = this,
+			placeholderKey = 'placeholder',
+			container,
+			prompt
 			;
 
 		self.baseInit(core, DEFAULT_OPTS);
@@ -121,7 +123,18 @@
 		self.core().wrapElement().append(container);
 		self.setPrompt(self.opts(OPT_PROMPT));
 		
-		if(self.val().length > 0)
+		prompt = core.input().attr(placeholderKey);
+
+		if(!prompt)
+			prompt = self.opts(OPT_PROMPT);
+
+		// clear placeholder attribute if set
+		core.input().attr(placeholderKey, '');
+
+		if(prompt)
+			self.setPrompt(prompt);
+
+		if($.trim(self.val()).length > 0)
 			self.hidePrompt();
 
 		self.on({
@@ -208,8 +221,7 @@
 
 		self.startTimer('prompt', 0.1, function()
 		{
-			if(self.val().length === 0)
-				self.showPrompt();
+			self.showPrompt();
 		});
 	};
 
@@ -224,7 +236,12 @@
 	 */
 	p.showPrompt = function()
 	{
-		this.containerElement().removeClass(CSS_HIDE_PROMPT);
+		var self     = this,
+			input    = self.input()
+			;
+		
+		if($.trim(self.val()).length === 0 && !input.is(':focus'))
+			self.containerElement().removeClass(CSS_HIDE_PROMPT);
 	};
 
 	/**

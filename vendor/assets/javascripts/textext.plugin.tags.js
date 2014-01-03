@@ -1,17 +1,17 @@
 /**
  * jQuery TextExt Plugin
- * http://alexgorbatchev.com/textext
+ * http://textextjs.com
  *
- * @version 1.2.0
+ * @version 1.3.1
  * @copyright Copyright (C) 2011 Alex Gorbatchev. All rights reserved.
  * @license MIT License
  */
 (function($)
 {
 	/**
-	 * Tags plugin brings in the traditional tag functionality where user can assemble and 
+	 * Tags plugin brings in the traditional tag functionality where user can assemble and
 	 * edit list of tags. Tags plugin works especially well together with Autocomplete, Filter,
-	 * Suggestions and Ajax plugins to provide full spectrum of features. It can also work on 
+	 * Suggestions and Ajax plugins to provide full spectrum of features. It can also work on
 	 * its own and just do one thing -- tags.
 	 *
 	 * @author agorbatchev
@@ -32,9 +32,13 @@
 		CSS_DOT_TAG         = CSS_DOT + CSS_TAG,
 		CSS_TAGS            = 'text-tags',
 		CSS_DOT_TAGS        = CSS_DOT + CSS_TAGS,
+		CSS_LABEL           = 'text-label',
+		CSS_DOT_LABEL       = CSS_DOT + CSS_LABEL,
+		CSS_REMOVE          = 'text-remove',
+		CSS_DOT_REMOVE      = CSS_DOT + CSS_REMOVE,
 
 		/**
-		 * Tags plugin options are grouped under `tags` when passed to the 
+		 * Tags plugin options are grouped under `tags` when passed to the
 		 * `$().textext()` function. For example:
 		 *
 		 *     $('textarea').textext({
@@ -73,7 +77,7 @@
 		 * @id TextExtTags.options.tags.items
 		 */
 		OPT_ITEMS = 'tags.items',
-		
+
 		/**
 		 * HTML source that is used to generate a single tag.
 		 *
@@ -84,7 +88,7 @@
 		 * @id TextExtTags.options.html.tag
 		 */
 		OPT_HTML_TAG  = 'html.tag',
-		
+
 		/**
 		 * HTML source that is used to generate container for the tags.
 		 *
@@ -124,6 +128,35 @@
 		 */
 		EVENT_IS_TAG_ALLOWED = 'isTagAllowed',
 
+		/**
+		 * Tags plugin triggers the `tagClick` event when user clicks on one of the tags. This allows to process
+		 * the click and potentially change the value of the tag (for example in case of user feedback).
+		 *
+		 *     $('textarea').textext({...}).bind('tagClick', function(e, tag, value, callback)
+		 *     {
+		 *         var newValue = window.prompt('New value', value);
+
+		 *         if(newValue)
+		 *             callback(newValue, true);
+		 *     })
+		 *
+		 *  Callback argument has the following signature:
+		 *
+		 *     function(newValue, refocus)
+		 *     {
+		 *         ...
+		 *     }
+		 *
+		 * Please check out [example](/manual/examples/tags-changing.html).
+		 *
+		 * @name tagClick
+		 * @version 1.3.0
+		 * @author s.stok
+		 * @date 2011/01/23
+		 * @id TextExtTags.events.tagClick
+		 */
+		EVENT_TAG_CLICK = 'tagClick',
+
 		DEFAULT_OPTS = {
 			tags : {
 				enabled : true,
@@ -151,7 +184,6 @@
 	p.init = function(core)
 	{
 		this.baseInit(core, DEFAULT_OPTS);
-
 		var self  = this,
 			input = self.input(),
 			container
@@ -182,7 +214,7 @@
 			});
 		}
 
-		self._originalPadding = { 
+		self._originalPadding = {
 			left : parseInt(input.css('paddingLeft') || 0),
 			top  : parseInt(input.css('paddingTop') || 0)
 		};
@@ -211,7 +243,7 @@
 
 	//--------------------------------------------------------------------------------
 	// Event handlers
-	
+
 	/**
 	 * Reacts to the `postInit` event triggered by the core and sets default tags
 	 * if any were specified.
@@ -232,7 +264,7 @@
 
 	/**
 	 * Reacts to the [`getFormData`][1] event triggered by the core. Returns data with the
-	 * weight of 200 to be *greater than the Autocomplete plugin* data weight. The weights 
+	 * weight of 200 to be *greater than the Autocomplete plugin* data weight. The weights
 	 * system is covered in greater detail in the [`getFormData`][1] event documentation.
 	 *
 	 * [1]: /manual/textext.html#getformdata
@@ -312,7 +344,7 @@
 	};
 
 	/**
-	 * Reacts to the `backspaceKeyDown` event. When backspace key is pressed in an empty text field, 
+	 * Reacts to the `backspaceKeyDown` event. When backspace key is pressed in an empty text field,
 	 * deletes last tag from the list.
 	 *
 	 * @signature TextExtTags.onBackspaceKeyDown(e)
@@ -336,7 +368,7 @@
 	/**
 	 * Reacts to the `preInvalidate` event and updates the input box to look like the tags are
 	 * positioned inside it.
-	 * 
+	 *
 	 * @signature TextExtTags.onPreInvalidate(e)
 	 *
 	 * @param e {Object} jQuery event.
@@ -351,7 +383,7 @@
 			lastTag = self.tagElements().last(),
 			pos     = lastTag.position()
 			;
-		
+
 		if(lastTag.length > 0)
 			pos.left += lastTag.innerWidth();
 		else
@@ -379,22 +411,42 @@
 	p.onClick = function(e)
 	{
 		var self   = this,
+			core   = self.core(),
 			source = $(e.target),
-			focus  = 0
+			focus  = 0,
+			tag
 			;
 
 		if(source.is(CSS_DOT_TAGS))
 		{
 			focus = 1;
 		}
-		else if(source.is('.text-remove'))
+		else if(source.is(CSS_DOT_REMOVE))
 		{
 			self.removeTag(source.parents(CSS_DOT_TAG + ':first'));
 			focus = 1;
 		}
+		else if(source.is(CSS_DOT_LABEL))
+		{
+			tag = source.parents(CSS_DOT_TAG + ':first');
+			self.trigger(EVENT_TAG_CLICK, tag, tag.data(CSS_TAG), tagClickCallback);
+		}
+
+		function tagClickCallback(newValue, refocus)
+		{
+			tag.data(CSS_TAG, newValue);
+			tag.find(CSS_DOT_LABEL).text(self.itemManager().itemToString(newValue));
+
+			self.updateFormCache();
+			core.getFormData();
+			core.invalidateBounds();
+
+			if(refocus)
+				core.focusInput();
+		}
 
 		if(focus)
-			self.core().focusInput();
+			core.focusInput();
 	};
 
 	/**
@@ -458,7 +510,7 @@
 	 * any of the tags, the tags container is sent under the text area. If cursor
 	 * is over any of the tags, the tag container is brought to be over the text
 	 * area.
-	 * 
+	 *
 	 * @signature TextExtTags.toggleZIndex(e)
 	 *
 	 * @param e {Object} jQuery event.
@@ -559,7 +611,7 @@
 	 *
 	 * @signature TextExtTags.getTagElement(tag)
 	 *
-	 * @param tag {Object} Tag object in the format that current `ItemManager` can understand. 
+	 * @param tag {Object} Tag object in the format that current `ItemManager` can understand.
 	 * Default is `String`.
 
 	 * @author agorbatchev
@@ -583,7 +635,7 @@
 	 *
 	 * @signature TextExtTags.removeTag(tag)
 	 *
-	 * @param tag {Object} Tag object in the format that current `ItemManager` can understand. 
+	 * @param tag {Object} Tag object in the format that current `ItemManager` can understand.
 	 * Default is `String`.
 	 *
 	 * @author agorbatchev
@@ -618,7 +670,7 @@
 	 *
 	 * @signature TextExtTags.renderTag(tag)
 	 *
-	 * @param tag {Object} Tag object in the format that current `ItemManager` can understand. 
+	 * @param tag {Object} Tag object in the format that current `ItemManager` can understand.
 	 * Default is `String`.
 	 *
 	 * @author agorbatchev
