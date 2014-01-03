@@ -7,7 +7,7 @@ Gem::Specification.new do |s|
   s.version     = Textext::Rails::VERSION
   s.authors     = ["Jeff Pollard"]
   s.email       = ["jeff.pollard@gmail.com"]
-  s.homepage    = ""
+  s.homepage    = "https://github.com/Fluxx/textext-rails"
   s.summary     = %q{Adds the jQuery TextExt plugin to the Rails 3.1 asset pipeline}
   s.description = %q{Adds the jQuery TextExt plugin to the Rails 3.1 asset pipeline}
 
