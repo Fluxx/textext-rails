@@ -1,8 +1,8 @@
 /**
  * jQuery TextExt Plugin
- * http://alexgorbatchev.com/textext
+ * http://textextjs.com
  *
- * @version 1.2.0
+ * @version 1.3.1
  * @copyright Copyright (C) 2011 Alex Gorbatchev. All rights reserved.
  * @license MIT License
  */
@@ -71,7 +71,7 @@
 
 	var stringify = (JSON || {}).stringify,
 		slice     = Array.prototype.slice,
-
+		p,
 		UNDEFINED = 'undefined',
 
 		/**
@@ -802,7 +802,9 @@
 			if(plugin)
 			{
 				self._plugins[name] = plugin = new plugin();
-				self[name] = function() { return plugin; };
+				self[name] = (function(plugin) { 
+				  return function(){ return plugin; } 
+				})(plugin);
 				initList.push(plugin);
 				$.extend(true, plugin, self.opts(OPT_EXT + '.*'), self.opts(OPT_EXT + '.' + name));
 			}
@@ -968,17 +970,19 @@
 			input     = self.input(),
 			wrap      = self.wrapElement(),
 			container = wrap.parent(),
-			width     = self.originalWidth,
+			width     = self.originalWidth + 'px',
 			height
 			;
 
 		self.trigger(EVENT_PRE_INVALIDATE);
 
-		height = input.outerHeight();
+		height = input.outerHeight() + 'px';
 
-		input.width(width);
-		wrap.width(width).height(height);
-		container.height(height);
+		// using css() method instead of width() and height() here because they don't seem to do the right thing in jQuery 1.8.x
+		// https://github.com/alexgorbatchev/jquery-textext/issues/74
+		input.css({ 'width' : width });
+		wrap.css({ 'width' : width, 'height' : height });
+		container.css({ 'height' : height }); 
 
 		self.trigger(EVENT_POST_INVALIDATE);
 	};
@@ -1076,7 +1080,7 @@
 	p.getFormData = function(keyCode)
 	{
 		var self = this,
-			data = self.getWeightedEventResponse(EVENT_GET_FORM_DATA, keyCode)
+			data = self.getWeightedEventResponse(EVENT_GET_FORM_DATA, keyCode || 0)
 			;
 
 		self.trigger(EVENT_SET_FORM_DATA  , data['form']);

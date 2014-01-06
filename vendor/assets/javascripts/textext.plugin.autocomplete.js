@@ -1,15 +1,15 @@
 /**
  * jQuery TextExt Plugin
- * http://alexgorbatchev.com/textext
+ * http://textextjs.com
  *
- * @version 1.2.0
+ * @version 1.3.1
  * @copyright Copyright (C) 2011 Alex Gorbatchev. All rights reserved.
  * @license MIT License
  */
 (function($)
 {
 	/**
-	 * Autocomplete plugin brings the classic autocomplete functionality to the TextExt echosystem.
+	 * Autocomplete plugin brings the classic autocomplete functionality to the TextExt ecosystem.
 	 * The gist of functionality is when user starts typing in, for example a term or a tag, a
 	 * dropdown would be presented with possible suggestions to complete the input quicker.
 	 *
@@ -29,6 +29,8 @@
 		CSS_DOT_SELECTED   = CSS_DOT + CSS_SELECTED,
 		CSS_SUGGESTION     = 'text-suggestion',
 		CSS_DOT_SUGGESTION = CSS_DOT + CSS_SUGGESTION,
+		CSS_LABEL          = 'text-label',
+		CSS_DOT_LABEL      = CSS_DOT + CSS_LABEL,
 
 		/**
 		 * Autocomplete plugin options are grouped under `autocomplete` when passed to the 
@@ -226,6 +228,8 @@
 
 		POSITION_ABOVE = 'above',
 		POSITION_BELOW = 'below',
+		
+		DATA_MOUSEDOWN_ON_AUTOCOMPLETE = 'mousedownOnAutocomplete',
 
 		DEFAULT_OPTS = {
 			autocomplete : {
@@ -291,6 +295,7 @@
 
 			self.on(container, {
 				mouseover : self.onMouseOver,
+				mousedown : self.onMouseDown,
 				click     : self.onClick
 			});
 
@@ -300,6 +305,12 @@
 				;
 
 			$(self).data('container', container);
+			
+			$(document.body).click(function(e) 
+			{
+				if (self.isDropdownVisible() && !self.withinWrapElement(e.target))
+					self.trigger(EVENT_HIDE_DROPDOWN);
+			});
 
 			self.positionDropdown();
 		}
@@ -345,7 +356,23 @@
 			target.addClass(CSS_SELECTED);
 		}
 	};
-
+	
+	/**
+	 * Reacts to the `mouseDown` event triggered by the TextExt core.
+	 *
+	 * @signature TextExtAutocomplete.onMouseDown(e)
+	 *
+	 * @param e {Object} jQuery event.
+	 *
+	 * @author adamayres
+	 * @date 2012/01/13
+	 * @id TextExtAutocomplete.onMouseDown
+	 */
+	p.onMouseDown = function(e)
+	{
+		this.containerElement().data(DATA_MOUSEDOWN_ON_AUTOCOMPLETE, true);
+	};
+	
 	/**
 	 * Reacts to the `click` event triggered by the TextExt core.
 	 *
@@ -363,8 +390,11 @@
 			target = $(e.target)
 			;
 
-		if(target.is(CSS_DOT_SUGGESTION))
-			self.selectFromDropdown();
+		if(target.is(CSS_DOT_SUGGESTION) || target.is(CSS_DOT_LABEL))
+			self.trigger('enterKeyPress');
+		
+		if (self.core().hasPlugin('tags'))
+			self.val('');
 	};
 
 	/**
@@ -380,12 +410,18 @@
 	 */
 	p.onBlur = function(e)
 	{
-		var self = this;
+		var self              = this,
+			container         = self.containerElement(),
+			isBlurByMousedown = container.data(DATA_MOUSEDOWN_ON_AUTOCOMPLETE) === true
+			;
 
-		// use timeout here so that onClick has a chance to fire because if
-		// dropdown is hidden when clicked, onClick doesn't fire
+		// only trigger a close event if the blur event was 
+		// not triggered by a mousedown event on the autocomplete
+		// otherwise set focus back back on the input
 		if(self.isDropdownVisible())
-			setTimeout(function() { self.trigger(EVENT_HIDE_DROPDOWN) }, 100);
+			isBlurByMousedown ? self.core().focusInput() : self.trigger(EVENT_HIDE_DROPDOWN);
+				
+		container.removeData(DATA_MOUSEDOWN_ON_AUTOCOMPLETE);
 	};
 
 	/**
@@ -684,7 +720,7 @@
 	 * @author agorbatchev
 	 * @date 2011/12/27
 	 * @id TextExtAutocomplete.onToggleDropdown
-	 * @version 1.1
+	 * @version 1.1.0
 	 */
 	p.onToggleDropdown = function(e)
 	{
@@ -1049,9 +1085,26 @@
 		if(suggestion)
 		{
 			self.val(self.itemManager().itemToString(suggestion));
-			self.core().getFormData();
+			self.core().getFormData();	
 		}
 
 		self.trigger(EVENT_HIDE_DROPDOWN);
 	};
+	
+	/**
+	 * Determines if the specified HTML element is within the TextExt core wrap HTML element.
+	 *
+	 * @signature TextExtAutocomplete.withinWrapElement(element)
+	 *
+	 * @param element {HTMLElement} element to check if contained by wrap element
+	 *
+	 * @author adamayres
+	 * @version 1.3.0
+	 * @date 2012/01/15
+	 * @id TextExtAutocomplete.withinWrapElement
+	 */
+	p.withinWrapElement = function(element) 
+	{
+		return this.core().wrapElement().find(element).size() > 0;
+	}
 })(jQuery);

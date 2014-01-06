@@ -1,17 +1,16 @@
 require "bundler/gem_tasks"
 
-DOWNLOAD_FOLDER = 'https://nodeload.github.com/alexgorbatchev/jquery-textext/tarball/'
-LATEST_VERSION = '1.2.0'
-DOWNLOAD_URL = DOWNLOAD_FOLDER + LATEST_VERSION
+LATEST_VERSION = '1.3.1'
+DOWNLOAD_URL = "https://github.com/alexgorbatchev/jquery-textext/archive/#{LATEST_VERSION}.tar.gz"
 
 desc "Sync the files from the upstream release"
 task :sync do
   sh 'mkdir -p sync'
   sh 'mkdir -p vendor/assets'
-  sh "curl -0 #{DOWNLOAD_URL} > sync/latest.tar.gz"
-  sh 'cd sync && tar -xzvf latest.tar.gz'
+  sh "curl -0 -L #{DOWNLOAD_URL} > sync/latest.tar.gz"
+  sh 'cd sync && tar -xzf latest.tar.gz'
 
-  release_folder = `ls sync | grep alex`.chomp
+  release_folder = `ls sync | grep jquery-textext`.chomp
 
   sh 'rm -rf vendor/assets/stylesheets'
   sh 'rm -rf vendor/assets/javascripts'
